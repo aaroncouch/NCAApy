@@ -1,5 +1,8 @@
 # NCAApy Changelog
 
+## 0.0.2:
+- Fixed issues with nested quotes used in f-strings.
+
 ## 0.0.1:
 - Refactored project into a Python package
 - Refactored the code to comply with PEP formatting rules.

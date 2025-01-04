@@ -196,8 +196,8 @@ def event_sorter(pbp):
     col_names = pbp.columns.tolist()
     # TODO: Why can't this just be "away_score" and "home_score"?
     team_columns = [
-        f'{col_names[4].split('_')[0]}_Score',
-        f'{col_names[9].split('_')[0]}_Score'
+        f"{col_names[4].split('_')[0]}_Score",
+        f"{col_names[9].split('_')[0]}_Score"
     ]
     pbp[team_columns] = pbp['Score'].str.split('-', expand=True)
     pbp = pbp.drop(columns='Score')
@@ -491,9 +491,12 @@ def make_game(game_id):
     stats = pd.read_html(
         f'https://stats.ncaa.org/contests/{game_id}/individual_stats'
     )
+    key1 = stats[3]['Name'][len(stats[3]) - 1]
+    key2 = stats[4]['Name'][len(stats[4]) - 1]
+
     team_players = {
-        f'{stats[3]['Name'][len(stats[3]) - 1]}': stats[3]['Name'].tolist(),
-        f'{stats[4]['Name'][len(stats[4]) - 1]}': stats[4]['Name'].tolist()
+        f"{key1}": stats[3]['Name'].tolist(),
+        f"{key2}": stats[4]['Name'].tolist()
     }
     stats = stats[3:]
     full_sheet = pd.concat(plays[3:], ignore_index=True)
@@ -550,7 +553,8 @@ def game_stats(game_id):
             continue
         team_ids.append(card.find('a')['href'].split('/')[-1])
     for index, team in enumerate(team_ids):
-        stats[index][f'{stats[index]['Team'][0]}_id'] = team
+        team_name = stats[index]['Team'][0]
+        stats[index][f"{team_name}_id"] = team
     full_sheet = pd.concat(stats, ignore_index=True)
     col_names = full_sheet.columns.tolist()
     full_sheet[col_names[-1]] = full_sheet[col_names[-1]][len(full_sheet) - 1]
