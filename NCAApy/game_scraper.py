@@ -196,8 +196,8 @@ def event_sorter(pbp):
     col_names = pbp.columns.tolist()
     # TODO: Why can't this just be "away_score" and "home_score"?
     team_columns = [
-        f'{col_names[4].split('_')[0]}_Score',
-        f'{col_names[9].split('_')[0]}_Score'
+        f"{col_names[4].split('_')[0]}_Score",
+        f"{col_names[9].split('_')[0]}_Score"
     ]
     pbp[team_columns] = pbp['Score'].str.split('-', expand=True)
     pbp = pbp.drop(columns='Score')
@@ -491,9 +491,12 @@ def make_game(game_id):
     stats = pd.read_html(
         f'https://stats.ncaa.org/contests/{game_id}/individual_stats'
     )
+    key1 = stats[3]['Name'][len(stats[3]) - 1]
+    key2 = stats[4]['Name'][len(stats[4]) - 1]
+
     team_players = {
-        f'{stats[3]['Name'][len(stats[3]) - 1]}': stats[3]['Name'].tolist(),
-        f'{stats[4]['Name'][len(stats[4]) - 1]}': stats[4]['Name'].tolist()
+        f"{key1}": stats[3]['Name'].tolist(),
+        f"{key2}": stats[4]['Name'].tolist()
     }
     stats = stats[3:]
     full_sheet = pd.concat(plays[3:], ignore_index=True)
@@ -528,6 +531,19 @@ def get_refs(game_id):
         refs.append(row.text.strip())
     return refs
 
+def _filter_dataframes(dataframes: list, required_columns: set) -> list:
+    """
+    Filters and locates valuable dataframes based on specified required columns.
+
+    Parameters:
+    - dataframes (list): List of pandas DataFrames.
+    - required_columns (set): Set of column names required in the dataframe.
+
+    Returns:
+    - list: Filtered list containing the valuable dataframes.
+    """
+    return [dataframe for dataframe in dataframes if required_columns.issubset(dataframe.columns)]
+
 
 def game_stats(game_id):
     response = requests.get(
@@ -536,7 +552,7 @@ def game_stats(game_id):
     )
     html_content = response.text
     html_buffer = StringIO(html_content)
-    stats = pd.read_html(html_buffer)[3:]
+    stats = _filter_dataframes(pd.read_html(html_buffer), {'#', 'Name', 'P'})
     for index, team in enumerate(stats):
         team['Team'] = team['Name'][len(team) - 1]
         team.drop(len(team) - 2, inplace=True)
@@ -550,7 +566,8 @@ def game_stats(game_id):
             continue
         team_ids.append(card.find('a')['href'].split('/')[-1])
     for index, team in enumerate(team_ids):
-        stats[index][f'{stats[index]['Team'][0]}_id'] = team
+        team_name = stats[index]['Team'][0]
+        stats[index][f"{team_name}_id"] = team
     full_sheet = pd.concat(stats, ignore_index=True)
     col_names = full_sheet.columns.tolist()
     full_sheet[col_names[-1]] = full_sheet[col_names[-1]][len(full_sheet) - 1]
@@ -586,6 +603,40 @@ def game_stats(game_id):
     full_sheet = full_sheet.replace({np.nan: pd.NA})
     return full_sheet
 
+def game_stats_live(game_id: int) -> pd.DataFrame:
+    response = requests.get(
+        f'https://stats.ncaa.org/contests/livestream_scoreboards/{game_id}/box_score',
+        headers=headers
+    )
+    html_content = response.text
+    html_buffer = StringIO(html_content)
+    stats = _filter_dataframes(pd.read_html(html_buffer), {'#', 'Name', 'Pos'})
+    for index, team in enumerate(stats):
+        team['Team'] = team['Name'][len(team) - 1]
+        team.drop(len(team) - 2, inplace=True)
+    soup = BeautifulSoup(html_content, 'html.parser')
+    team_ids = []
+    tables = soup.find_all('td', class_='grey_text')
+    for table in tables:
+        for a_tag in table.find_all('a'):
+            href = a_tag.get("href")
+            if "teams" in href:
+                team_ids.append(href.split('/')[-1])
+    for index, team in enumerate(team_ids):
+        team_name = stats[index]['Team'][0]
+        stats[index][f"{team_name}_id"] = team
+    full_sheet = pd.concat(stats, ignore_index=True)
+    col_names = full_sheet.columns.tolist()
+    # The following code removes the leftmost team ID data entirely and fills the rightmost with
+    # the rightmost only. I'm commenting it out for the sake of my function.
+    # full_sheet[col_names[-1]] = full_sheet[col_names[-1]][len(full_sheet) - 1]
+    # full_sheet[col_names[-2]] = full_sheet[col_names[-2]][len(full_sheet) - 2]
+    full_sheet['Player_id'] = pd.NA
+    date_time = tables[-2].text.split(" ")
+    full_sheet['Date'] = date_time[0]
+    full_sheet['Time'] = " ".join(date_time[1:])
+    full_sheet['Location'] = tables[-1].text
+    return full_sheet
 
 if __name__ == "__main__":
     game_stats(8174404)
