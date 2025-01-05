@@ -1,6 +1,7 @@
 # TODO: Move these global variables into function calls.
 # TODO: Make it obvious which sport these values correspond to.
 years = {
+    2025: 18404,
     2024: 18221,
     2023: 16060,
     2022: 15881,
