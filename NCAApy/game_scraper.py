@@ -627,8 +627,10 @@ def game_stats_live(game_id: int) -> pd.DataFrame:
         stats[index][f"{team_name}_id"] = team
     full_sheet = pd.concat(stats, ignore_index=True)
     col_names = full_sheet.columns.tolist()
-    full_sheet[col_names[-1]] = full_sheet[col_names[-1]][len(full_sheet) - 1]
-    full_sheet[col_names[-2]] = full_sheet[col_names[-2]][len(full_sheet) - 2]
+    # The following code removes the leftmost team ID data entirely and fills the rightmost with
+    # the rightmost only. I'm commenting it out for the sake of my function.
+    # full_sheet[col_names[-1]] = full_sheet[col_names[-1]][len(full_sheet) - 1]
+    # full_sheet[col_names[-2]] = full_sheet[col_names[-2]][len(full_sheet) - 2]
     full_sheet['Player_id'] = pd.NA
     date_time = tables[-2].text.split(" ")
     full_sheet['Date'] = date_time[0]
