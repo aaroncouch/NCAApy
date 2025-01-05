@@ -3,6 +3,7 @@
 ## 0.0.2:
 - Fixed issues with nested quotes used in f-strings.
 - Added 2025 to the list of supported years.
+- Added new method to get stats for a live game.
 
 ## 0.0.1:
 - Refactored project into a Python package
